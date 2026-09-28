@@ -8,6 +8,17 @@ adding one is a minor release.
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-09-28
+
+### Fixed
+
+- A tool now refuses a parameter it does not define, and names the ones it
+  takes. Before, the parameter was silently dropped and the call answered as
+  if it had never been given: `start_date` on `search_records`, which only
+  `search_records_advanced` takes, returned every date and read as a
+  filtered answer. The published schemas now say `additionalProperties:
+  false`, so a client that validates can refuse before sending.
+
 ## [1.0.1] — 2026-09-28
 
 No change to the tools. This release brings the documentation and package
@@ -66,6 +77,7 @@ The first public release.
   (403).
 - A `.env` file is read from the working directory only.
 
-[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ianderso/nara-catalog-mcp/releases/tag/v1.0.0

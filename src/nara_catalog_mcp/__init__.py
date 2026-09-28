@@ -5,4 +5,4 @@ page images. Nothing here writes to the Catalog, and nothing here keeps a
 family tree: pair it with genealogy software or a tree server for that.
 """
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
