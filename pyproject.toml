@@ -1,0 +1,76 @@
+[project]
+name = "nara-catalog-mcp"
+dynamic = ["version"]
+description = "MCP server over the US National Archives Catalog API: search records, read OCR text and citizen transcriptions, browse the hierarchy, and download page images."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ian Anderson" }]
+keywords = ["mcp", "nara", "national-archives", "genealogy", "archives", "research"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Sociology :: Genealogy",
+    "Topic :: Sociology :: History",
+]
+dependencies = [
+    # Capped below 3: server.compact_schemas reaches into the SDK's private
+    # tool registry, which a major release is free to change.
+    "mcp>=2.0.0,<3",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    # 0.9 is the oldest ruff whose formatter agrees with the committed style.
+    "ruff>=0.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/ianderso/nara-catalog-mcp"
+Repository = "https://github.com/ianderso/nara-catalog-mcp"
+Issues = "https://github.com/ianderso/nara-catalog-mcp/issues"
+Changelog = "https://github.com/ianderso/nara-catalog-mcp/blob/main/CHANGELOG.md"
+
+[project.scripts]
+nara-catalog-mcp = "nara_catalog_mcp.__main__:main"
+
+[build-system]
+# 1.27 is the first hatchling to accept an SPDX string for `license`.
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/nara_catalog_mcp/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [".github"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nara_catalog_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008", "UP042"]

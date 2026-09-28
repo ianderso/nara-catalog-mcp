@@ -1,0 +1,125 @@
+{
+  "api_budget": [],
+  "browse_children": [
+    "limit",
+    "page",
+    "parent_naid"
+  ],
+  "download_page_image": [
+    "destination",
+    "naid",
+    "object_id",
+    "page"
+  ],
+  "get_comments": [
+    "max_chars",
+    "naid",
+    "refresh"
+  ],
+  "get_extracted_text": [
+    "limit",
+    "max_chars",
+    "naid",
+    "object_id",
+    "page",
+    "refresh"
+  ],
+  "get_online_availability": [
+    "naid"
+  ],
+  "get_partner_digital_objects": [
+    "naid"
+  ],
+  "get_record": [
+    "naid",
+    "refresh"
+  ],
+  "get_record_images": [
+    "naid",
+    "refresh"
+  ],
+  "get_tags": [
+    "naid",
+    "refresh"
+  ],
+  "get_transcriptions": [
+    "max_chars",
+    "naid",
+    "refresh"
+  ],
+  "search_by_contribution_text": [
+    "available_online",
+    "comment_text",
+    "extracted_text",
+    "limit",
+    "page",
+    "tag_text",
+    "transcription_text"
+  ],
+  "search_comments": [
+    "contributor",
+    "limit",
+    "naid",
+    "page",
+    "query"
+  ],
+  "search_extracted_text": [
+    "limit",
+    "page",
+    "query"
+  ],
+  "search_records": [
+    "limit",
+    "page",
+    "query",
+    "title"
+  ],
+  "search_records_advanced": [
+    "ancestor_naid",
+    "available_online",
+    "collection_identifier",
+    "comments_exist",
+    "congress_number",
+    "contributions_exist",
+    "control_numbers",
+    "creators",
+    "data_source",
+    "end_date",
+    "exact",
+    "exact_date",
+    "geographic_reference",
+    "include_extracted_text",
+    "level_of_description",
+    "limit",
+    "local_identifier",
+    "microform_publication",
+    "page",
+    "person_or_org",
+    "query",
+    "record_group_number",
+    "recurring_day",
+    "recurring_month",
+    "reference_units",
+    "search_after",
+    "start_date",
+    "tags_exist",
+    "title",
+    "transcriptions_exist",
+    "type_of_materials"
+  ],
+  "search_tags": [
+    "contributor",
+    "limit",
+    "naid",
+    "page",
+    "query",
+    "tag_is"
+  ],
+  "search_transcriptions": [
+    "contributor",
+    "limit",
+    "naid",
+    "page",
+    "query"
+  ]
+}
