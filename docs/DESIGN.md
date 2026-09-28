@@ -5,6 +5,10 @@ README; what the Catalog API actually does, as opposed to what its spec
 says, is in [API-NOTES.md](API-NOTES.md). This is the layer between: the
 decisions, and the reasons they were made.
 
+The server was written for genealogy: finding named people in pension files,
+service records and census microfilm, often among thousands who share the
+name. Most of what follows serves that.
+
 ## The stance: a description is a finding aid
 
 The Catalog describes what NARA holds. A search hit is a lead; the page

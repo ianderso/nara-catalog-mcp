@@ -1,13 +1,13 @@
 [project]
 name = "nara-catalog-mcp"
 dynamic = ["version"]
-description = "MCP server over the US National Archives Catalog API: search records, read OCR text and citizen transcriptions, browse the hierarchy, and download page images."
+description = "MCP server for genealogical research in the US National Archives Catalog: search records, read OCR text and citizen transcriptions, browse the hierarchy, and download page images."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Ian Anderson" }]
-keywords = ["mcp", "nara", "national-archives", "genealogy", "archives", "research"]
+keywords = ["mcp", "genealogy", "family-history", "nara", "national-archives", "archives", "research"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: End Users/Desktop",

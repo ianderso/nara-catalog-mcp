@@ -3,15 +3,23 @@
 [![CI](https://github.com/ianderso/nara-catalog-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ianderso/nara-catalog-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/nara-catalog-mcp)](https://pypi.org/project/nara-catalog-mcp/)
 
-An [MCP](https://modelcontextprotocol.io) server over the **US National
-Archives Catalog API**. Search NARA's holdings, read a record's description,
-read what machines and volunteers have transcribed from it, and fetch its page
-images.
+An [MCP](https://modelcontextprotocol.io) server for genealogical research in
+the **US National Archives Catalog**. Find an ancestor's pension file, service
+record or census page, read what machines and volunteers have transcribed
+from it, and fetch the page images you will cite.
 
-Nothing here writes to the Catalog. The Catalog describes what the Archives
-hold; a search hit is a lead, and the page images are the evidence. Nothing
-here writes to a genealogy tree either — pair it with a tree server if that is
-what you are doing.
+It works the way a careful genealogist does. A catalogue description is a
+finding aid, and OCR text, transcriptions and tags are somebody else's
+reading of the page: all of them are leads. The page image is the source. The
+tools say which is which, and the server tells the model to read the image
+before citing it.
+
+Nothing here writes to the Catalog, and nothing here keeps a family tree. The
+server finds and reads records; what you conclude from them belongs in your
+genealogy software, or in a family-tree MCP server running alongside this one.
+
+The tools work on any record the Catalog describes, so a historian or a
+journalist can use them too. The examples throughout are about tracing people.
 
 This is an independent project. It is not affiliated with, endorsed by, or
 supported by the National Archives and Records Administration.
