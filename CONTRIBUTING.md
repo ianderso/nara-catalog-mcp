@@ -45,8 +45,9 @@ test first.
 reads when choosing and calling it, so write it for that reader, not for a
 developer. The combined descriptions have a ceiling
 (`DESCRIPTION_BUDGET` in `tests/test_tool_contract.py`), because they are sent
-on every session before any work happens. Raise it deliberately, in its own
-commit, saying why.
+on every session before any work happens. Raise it deliberately, in a pull
+request of its own, saying why. Pull requests are squash-merged, so a commit
+of its own inside a larger one would not survive the merge.
 
 **The evidence distinction, kept.** OCR text, transcriptions, tags and
 comments are someone else's reading of a document. Any tool returning them
