@@ -25,7 +25,7 @@ from typing import Any
 
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from . import __version__
 from .client import (
@@ -1399,6 +1399,71 @@ def compact_schemas() -> int:
 
 #: Characters trimmed from the published schemas at import.
 SCHEMA_CHARS_SAVED = compact_schemas()
+
+
+def _refusing_unknown(model: type[BaseModel], tool_name: str) -> type[BaseModel]:
+    """Subclass a tool's argument model so it refuses names it does not define.
+
+    The refusal lists what the tool does take, so a caller that guessed a
+    name can correct itself in one step rather than guessing again.
+    """
+    accepted = sorted(f.alias or name for name, f in model.model_fields.items())
+
+    def name_the_unknown(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if unknown := sorted(set(data) - set(accepted)):
+                raise ValueError(
+                    f"{tool_name} has no parameter "
+                    f"{', '.join(repr(u) for u in unknown)}. It takes: "
+                    f"{', '.join(accepted) or 'no parameters'}."
+                )
+        return data
+
+    # Built with type() so the subclass keeps the parent's name, which is
+    # what pydantic prints at the head of the refusal.
+    return type(
+        model.__name__,
+        (model,),
+        {
+            "__module__": model.__module__,
+            # Merged with the parent's config, not a replacement for it.
+            "model_config": ConfigDict(extra="forbid"),
+            "_name_the_unknown": model_validator(mode="before")(classmethod(name_the_unknown)),
+        },
+    )
+
+
+def refuse_unknown_arguments() -> int:
+    """Make every tool refuse a parameter it does not define. Returns the count.
+
+    The SDK builds argument models with pydantic's default of *ignoring*
+    extra fields, and the published schemas did not forbid them either. So a
+    misnamed argument was accepted and silently dropped, and the call
+    answered as if that filter had never been given: ``start_date`` passed
+    to ``search_records``, which has no such parameter, returned every date,
+    and read as a filtered answer.
+
+    Also publishes ``additionalProperties: false``, so a client that
+    validates against the schema can refuse before sending.
+
+    Run once at import, after :func:`compact_schemas`. Idempotent, so calling
+    it again is harmless.
+    """
+    manager = getattr(mcp, "_tool_manager", None)
+    if manager is None:  # pragma: no cover - guards a future mcp refactor
+        return 0
+    changed = 0
+    for tool in getattr(manager, "_tools", {}).values():
+        meta = tool.fn_metadata
+        if meta.arg_model.model_config.get("extra") != "forbid":
+            meta.arg_model = _refusing_unknown(meta.arg_model, tool.name)
+            changed += 1
+        tool.parameters["additionalProperties"] = False
+    return changed
+
+
+#: Tools made to refuse unknown parameters at import.
+TOOLS_REFUSING_UNKNOWN = refuse_unknown_arguments()
 
 
 def run() -> None:

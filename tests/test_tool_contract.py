@@ -288,3 +288,64 @@ async def test_compaction_is_idempotent():
     from nara_catalog_mcp.server import compact_schemas
 
     assert compact_schemas() == 0
+
+
+# --------------------------------------------------------------------------- #
+# Unknown parameters are refused, not dropped
+# --------------------------------------------------------------------------- #
+@respx.mock
+async def test_every_tool_refuses_a_parameter_it_does_not_define():
+    """A misnamed argument must fail loudly, on every tool.
+
+    The SDK's default is to ignore it, so the call answers as if that filter
+    had never been given: a plausible wrong answer rather than an error. The
+    same defect was reported from real use in both sibling servers.
+    """
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    # Should the refusal regress, the tools run for real; keep them offline.
+    respx.route().mock(return_value=httpx.Response(200, json={}))
+    accepted = []
+    for tool in await _tools():
+        args = valid_args(tool, not_a_parameter="x")
+        try:
+            await mcp.call_tool(tool.name, args)
+        except ToolError as exc:
+            assert "not_a_parameter" in str(exc), tool.name
+            continue
+        accepted.append(tool.name)
+    assert accepted == [], f"accepted an undefined parameter: {accepted}"
+
+
+@respx.mock
+async def test_an_advanced_filter_on_the_plain_search_is_refused():
+    """The trap this server had: ``start_date`` belongs to the advanced search.
+
+    ``search_records`` accepted it and returned every date, which reads as a
+    filtered answer. The refusal names what the plain search does take.
+    """
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    respx.route().mock(return_value=httpx.Response(200, json={}))
+    with pytest.raises(ToolError) as exc:
+        await mcp.call_tool("search_records", {"title": "Hall", "start_date": "1900"})
+    message = str(exc.value)
+    assert "search_records has no parameter 'start_date'" in message
+    assert "It takes: limit, page, query, title." in message
+
+
+async def test_every_published_schema_forbids_additional_properties():
+    """A client that validates against the schema can refuse before sending."""
+    loose = [
+        t.name
+        for t in await _tools()
+        if (t.input_schema or {}).get("additionalProperties") is not False
+    ]
+    assert loose == []
+
+
+async def test_refusing_unknown_arguments_is_idempotent():
+    """It runs at import; running it again must not wrap a model twice."""
+    from nara_catalog_mcp.server import refuse_unknown_arguments
+
+    assert refuse_unknown_arguments() == 0
