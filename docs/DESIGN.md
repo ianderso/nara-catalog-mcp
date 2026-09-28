@@ -215,5 +215,4 @@ Not decisions against, just not done.
   but it will create a file anywhere the server's user can write. A
   `NARA_DOWNLOAD_DIR` that confines it to one directory would suit anyone who
   wants a tighter boundary than a per-call approval.
-- **Not on PyPI**, so `uvx nara-catalog-mcp` needs the `--from git+…`.
 - **Python 3.14** is not declared until the suite has run on a final release.
