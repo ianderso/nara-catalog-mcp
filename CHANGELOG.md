@@ -8,6 +8,24 @@ adding one is a minor release.
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-09-28
+
+No change to the tools. This release brings the documentation and package
+metadata written since 1.0.0 to PyPI, whose page for 1.0.0 still gave the
+`git+` install.
+
+### Added
+
+- Listing in the [MCP Registry](https://registry.modelcontextprotocol.io) as
+  `io.github.ianderso/nara-catalog-mcp`: a `server.json`, and the README
+  marker the registry checks to confirm the PyPI package is this project's.
+  The release workflow publishes both there after PyPI.
+
+### Changed
+
+- The README and the package description say what the server is for:
+  genealogical research. Installing is `uvx nara-catalog-mcp`.
+
 ## [1.0.0] — 2026-09-28
 
 The first public release.
@@ -48,5 +66,6 @@ The first public release.
   (403).
 - A `.env` file is read from the working directory only.
 
-[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ianderso/nara-catalog-mcp/releases/tag/v1.0.0

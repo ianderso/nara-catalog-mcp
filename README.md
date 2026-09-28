@@ -3,6 +3,8 @@
 [![CI](https://github.com/ianderso/nara-catalog-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ianderso/nara-catalog-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/nara-catalog-mcp)](https://pypi.org/project/nara-catalog-mcp/)
 
+<!-- mcp-name: io.github.ianderso/nara-catalog-mcp -->
+
 An [MCP](https://modelcontextprotocol.io) server for genealogical research in
 the **US National Archives Catalog**. Find an ancestor's pension file, service
 record or census page, read what machines and volunteers have transcribed

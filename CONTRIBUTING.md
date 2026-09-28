@@ -86,10 +86,12 @@ cannot be withdrawn by this server. See "Out of scope, by decision" in
 ## Releasing
 
 1. Update `__version__` in `src/nara_catalog_mcp/__init__.py`; the package
-   version is read from there.
+   version is read from there. Set the same version twice in `server.json`,
+   once at the top and once on the package; a test holds the three together.
 2. Move the changelog's entries under a heading for the new version.
 3. Once that pull request is merged, tag the merge commit `vX.Y.Z` and
    publish a GitHub release from the tag.
 4. Publishing the release runs `.github/workflows/release.yml`, which builds
-   the tag and uploads it to PyPI by Trusted Publishing; there is no token to
-   manage. It refuses a tag that does not match `__version__`.
+   the tag, uploads it to PyPI by Trusted Publishing, and then publishes
+   `server.json` to the MCP Registry; there is no token to manage. It refuses
+   a tag that does not match `__version__` or `server.json`.

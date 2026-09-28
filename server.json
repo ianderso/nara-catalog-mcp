@@ -1,0 +1,46 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ianderso/nara-catalog-mcp",
+  "title": "NARA Catalog",
+  "description": "Genealogical research in the US National Archives Catalog: records, transcriptions, page images.",
+  "repository": {
+    "url": "https://github.com/ianderso/nara-catalog-mcp",
+    "source": "github"
+  },
+  "version": "1.0.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "nara-catalog-mcp",
+      "version": "1.0.1",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "NARA_API_KEY",
+          "description": "Catalog API key, requested from the National Archives Catalog API team.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "NARA_CACHE_DIR",
+          "description": "Directory for the on-disk response cache.",
+          "default": "~/.cache/nara-catalog-mcp"
+        },
+        {
+          "name": "NARA_TIMEOUT",
+          "description": "HTTP timeout in seconds.",
+          "default": "60"
+        },
+        {
+          "name": "NARA_MONTHLY_CALL_BUDGET",
+          "description": "Calls per month the key allows, reported by api_budget.",
+          "default": "10000"
+        }
+      ]
+    }
+  ]
+}
