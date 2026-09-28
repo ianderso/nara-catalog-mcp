@@ -1,6 +1,7 @@
 # nara-catalog-mcp
 
 [![CI](https://github.com/ianderso/nara-catalog-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ianderso/nara-catalog-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/nara-catalog-mcp)](https://pypi.org/project/nara-catalog-mcp/)
 
 An [MCP](https://modelcontextprotocol.io) server over the **US National
 Archives Catalog API**. Search NARA's holdings, read a record's description,
@@ -76,11 +77,11 @@ the default allowance is 10,000 calls per month.
 
 There are two ways to run the server.
 
-**Without cloning.** `uvx` fetches, builds and runs it in one step, and caches
-the result:
+**Without cloning.** `uvx` fetches it from PyPI and runs it in one step, and
+caches the result:
 
 ```bash
-NARA_API_KEY=your-key uvx --from git+https://github.com/ianderso/nara-catalog-mcp nara-catalog-mcp
+NARA_API_KEY=your-key uvx nara-catalog-mcp
 ```
 
 **From a clone**, which is what you want if you will change it:
@@ -105,7 +106,7 @@ Without cloning:
   "mcpServers": {
     "nara": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/ianderso/nara-catalog-mcp", "nara-catalog-mcp"],
+      "args": ["nara-catalog-mcp"],
       "env": { "NARA_API_KEY": "your-key" }
     }
   }
@@ -134,8 +135,7 @@ to start because `uv` or `uvx` cannot be found, give the full path that
 ### Claude Code
 
 ```bash
-claude mcp add nara --env NARA_API_KEY=your-key -- \
-  uvx --from git+https://github.com/ianderso/nara-catalog-mcp nara-catalog-mcp
+claude mcp add nara --env NARA_API_KEY=your-key -- uvx nara-catalog-mcp
 ```
 
 or, from a clone whose `.env` holds the key:
