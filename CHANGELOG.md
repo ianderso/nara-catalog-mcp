@@ -2,10 +2,13 @@
 
 All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
-[semantic versioning](https://semver.org/). Until 1.0, a minor release may
-change the tool surface.
+[semantic versioning](https://semver.org/). The tool surface is the public
+interface: renaming or removing a tool or a parameter is a major release, and
+adding one is a minor release.
 
-## [0.1.0] — unreleased
+## [Unreleased]
+
+## [1.0.0] — 2026-09-28
 
 The first public release.
 
@@ -45,4 +48,5 @@ The first public release.
   (403).
 - A `.env` file is read from the working directory only.
 
-[0.1.0]: https://github.com/ianderso/nara-catalog-mcp/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ianderso/nara-catalog-mcp/releases/tag/v1.0.0
