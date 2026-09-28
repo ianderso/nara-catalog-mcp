@@ -6,7 +6,7 @@ What each item means is in [CONTRIBUTING.md](https://github.com/ianderso/nara-ca
 
 - [ ] A test that fails without this change.
 - [ ] `uv run ruff check .`, `uv run ruff format --check .` and `uv run pytest` pass.
-- [ ] Tool descriptions are written for the model and fit under `DESCRIPTION_BUDGET`, or it is raised in its own commit saying why.
+- [ ] Tool descriptions are written for the model and fit under `DESCRIPTION_BUDGET`. Raising it takes a pull request of its own, saying why.
 - [ ] Any tool returning OCR, transcriptions, tags or comments says it is not evidence.
 - [ ] Failures come back as an `error` result, not an exception.
 - [ ] If a tool or parameter changed: `tests/fixtures/tool_schema.json` is regenerated and the README tables are updated.
