@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ianderso/nara-catalog-mcp/security/advisories/new
+    about: Privately, not in a public issue. See SECURITY.md.
+  - name: A problem with the Catalog API itself
+    url: https://www.archives.gov/research/catalog/help/api
+    about: This project does not operate the Catalog. Outages, wrong descriptions and key requests go to NARA.
