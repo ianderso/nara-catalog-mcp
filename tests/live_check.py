@@ -194,8 +194,8 @@ async def check_include_extracted_text(client: NaraClient, save: Path | None) ->
 
 
 async def check_aad(aad: AadClient) -> bool:
-    """Q3: does AAD still admit the client, and do the parsers still read it?"""
-    print("\n== Q3: does AAD admit this client, and still parse?")
+    """AAD: does it still admit the client, and do the parsers still read it?"""
+    print("\n== AAD: does it admit this client, and do its pages still parse?")
     try:
         form = await aad.read(
             "fielded-search.jsp", {"dt": AAD_FILE, "tf": "F"}, parse_search_form, refresh=True
