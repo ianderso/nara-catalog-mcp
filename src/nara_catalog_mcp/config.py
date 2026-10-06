@@ -1,7 +1,8 @@
 """Configuration from environment variables.
 
 ===================  =========================================================
-``NARA_API_KEY``     Key issued by the Catalog API team. Required.
+``NARA_API_KEY``     Key issued by the Catalog API team. Required by the
+                     Catalog tools; the AAD tools need none.
 ``NARA_CACHE_DIR``   Directory for the on-disk response cache.
 ``NARA_TIMEOUT``     HTTP timeout in seconds.
 ``NARA_MONTHLY_CALL_BUDGET``
@@ -54,7 +55,7 @@ class Config:
     monthly_call_budget: int = DEFAULT_CALL_BUDGET
 
 
-def load_config() -> Config:
+def load_config(*, require_key: bool = True) -> Config:
     """Load configuration from the environment.
 
     A ``.env`` file in the working directory is read if present; real
@@ -64,6 +65,13 @@ def load_config() -> Config:
     ``site-packages``: it would ignore the ``.env`` beside the user and could
     read an unrelated one from a parent such as the home directory.
 
+    Parameters
+    ----------
+    require_key : bool, optional
+        False for a caller that needs only the other settings: the AAD
+        tools read a service that takes no key. A missing key is then an
+        empty ``api_key`` rather than an error.
+
     Returns
     -------
     Config
@@ -72,15 +80,18 @@ def load_config() -> Config:
     Raises
     ------
     ConfigError
-        If ``NARA_API_KEY`` is unset or still the ``.env.example`` placeholder,
-        or a numeric setting is not a positive number. The server loads its
+        If the key is required and ``NARA_API_KEY`` is unset or still the
+        ``.env.example`` placeholder, or a numeric setting is not a positive
+        number. The server loads its
         configuration on the first tool call, so this surfaces there as a
         ``not_configured`` result rather than as a crash at launch.
     """
     load_dotenv(Path.cwd() / ".env")
 
     api_key = (os.environ.get("NARA_API_KEY") or "").strip()
-    if not api_key:
+    if not require_key and api_key in ("", PLACEHOLDER_KEY):
+        api_key = ""
+    elif not api_key:
         raise ConfigError(
             "NARA_API_KEY is not set. Request a Catalog API key at "
             "https://www.archives.gov/research/catalog/help/api and put it in "

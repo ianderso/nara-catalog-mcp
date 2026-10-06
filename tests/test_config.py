@@ -112,3 +112,22 @@ def test_a_dotenv_in_a_parent_directory_is_not_read(isolated, monkeypatch):
     monkeypatch.chdir(child)
     with pytest.raises(ConfigError, match="NARA_API_KEY is not set"):
         load_config()
+
+
+def test_the_aad_tools_can_load_settings_without_a_key(isolated, monkeypatch):
+    """AAD takes no key, so its tools must not be refused for want of one."""
+    monkeypatch.setenv("NARA_CACHE_DIR", str(isolated / "cache"))
+    cfg = load_config(require_key=False)
+    assert cfg.api_key == ""
+    assert cfg.cache_dir == isolated / "cache"
+    monkeypatch.setenv("NARA_API_KEY", "your-key-here")
+    assert load_config(require_key=False).api_key == ""
+    with pytest.raises(ConfigError):
+        load_config()
+
+
+def test_settings_are_still_checked_without_a_key(isolated, monkeypatch):
+    """Not needing a key does not make a bad timeout acceptable."""
+    monkeypatch.setenv("NARA_TIMEOUT", "sixty")
+    with pytest.raises(ConfigError, match="NARA_TIMEOUT"):
+        load_config(require_key=False)

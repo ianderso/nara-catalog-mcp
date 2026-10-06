@@ -176,3 +176,90 @@ host is open. So:
 Open is not the same as unrestricted. Most of NARA's holdings are in the public
 domain, but not all: some descriptions record use restrictions, such as
 copyright in donated materials. Check the record before republishing an image.
+
+## AAD (`aad.archives.gov`), observed 2026-10-05
+
+The Access to Archival Databases is a separate NARA web application with no
+API. What the `aad_*` tools rely on, as seen on this date:
+
+**Access and terms.**
+
+- `robots.txt` does not exist: the path answers 302 to `index.jsp`.
+  `www.archives.gov/robots.txt` (another host) sets `Crawl-delay: 10` for
+  all agents and disallows nothing under AAD.
+- AAD's Getting Started Guide and FAQ set no terms on automated access. The
+  restrictions they state are FOIA's: every file in AAD is either fully open
+  or a public-use version with exempt data withheld. The site-wide privacy
+  and use policy (`www.archives.gov/global-pages/privacy.html`) says
+  traffic is monitored for attempts to change or damage the system, asks
+  that people link rather than mirror the site, and says federal works are
+  generally in the public domain. Nothing forbids a paced, identified
+  reader.
+- AAD's load balancer (`awselb/2.0`) answered **403** to the User-Agents
+  `nara-catalog-mcp/1.0.2 (+https://github.com/ianderso/nara-catalog-mcp)`
+  and `nara-catalog-mcp/1.0.2`, and **200** to
+  `Mozilla/5.0 (compatible; nara-catalog-mcp/1.0.2;
+  +https://github.com/ianderso/nara-catalog-mcp)`. The client sends the
+  last.
+
+**Pages and parameters.**
+
+| Page | Parameters | What it gives |
+| --- | --- | --- |
+| `series-list.jsp` | `cat`, e.g. `GP21,22,23,24,44` (Genealogy/Personal History) | Each series (`series-description.jsp?s=<id>`), its record group, row count, and its files (`fielded-search.jsp?dt=<file id>`) with row counts. |
+| `fielded-search.jsp` | `dt`, `tf=F` | The file's search fields: per field a column id `c_id`, a hidden `nfo_<c_id>` (`V,20,1900` text, `N,4,1900` number) and either `txt_<c_id>` with `op_<c_id>` or, for a coded field, `cl_<c_id>`; `sc`, the default display columns. |
+| `display-partial-records.jsp` | `dt`, `sc`, `q`, per field `nfo_`/`op_`/`txt_`, `rpp` (10, 20 or 50), `pg` | "You found N partial records out of M total records in this file", "Page p of n", and a `queryResults` table whose rows link `record-detail.jsp?…&rid=<id>`. |
+| `record-detail.jsp` | `dt`, `rid` | Every field: title, value, and the code's meaning. |
+
+- Operators: text `0` all of the values, `1` any, `2` exact phrase;
+  number `3` equals, `4`–`7` less/greater than (or equal), `8` between,
+  which takes `txt_<c_id>` twice. A range search on NUMIDENT birth years
+  (`1930-1940`) returned the expected rows.
+- Free text (`q`) matches code meanings: `BEILIN RUSSIA` found 27 rows
+  whose country is stored as code 44. When a free-text match falls in a
+  column not displayed, the row is followed by a second row naming the
+  field that matched (`rowspan="2"` on the first cell).
+- Every search answers first with a 711-byte page titled "Please Wait..."
+  carrying `<meta http-equiv='Refresh' content='0'>`. Requesting the same
+  URL again, with the session's cookies (`JSESSIONID`, `AWSALB`), returns
+  the results.
+- Zero matches is an ordinary results page: "You found 0 partial records".
+- An unknown file id answers **404** with "the page you are trying to
+  access is not available". An unknown record id answers **200** with
+  every field blank.
+- Every search and record page carries the same header: the file unit, the
+  series with its dates, the record group (or collection) with its title in
+  a tooltip, and a series `(info)` link. A `<p id="disclaimer">` carries the
+  file's notice. For the NUMIDENT it says the files do not hold every SS-5
+  and that bookmarks from before 30 September 2026 may no longer work,
+  because NARA added records and redacted more data on potentially living
+  people: **record ids are not stable across reloads.**
+- The CSV download (`popup-download.jsp`, up to 1,000 rows) exists and is
+  not used: a results page and a record page are smaller, and enough.
+
+**The NUMIDENT** (series 5057, 24 files: application, death and claim, each
+split by surname range). From the series description and NARA's FAQ
+(`content/aad_docs/rg047_num_faq_2026Sep.pdf`):
+
+- It holds only people with a verified death or who would have been over
+  110 by 31 December 2007; SS-5 rows exist only for verified deceased
+  people or those born before 1908.
+- SS-5 information before 1973 may be incomplete (SSA converted legacy
+  applications 1973–79). The death files omit state-reported deaths, an
+  estimated 10–30% of all, and deaths before 1962 may be missing; no death
+  row is not proof of life. Claim rows stop by 1984 and name the account
+  holder, not the claimant.
+- NARA masked 0.15% of application rows, of potentially living people, by
+  filling every field with Z; they sit in the U–Z file.
+- The original SS-5 is requested from SSA under FOIA.
+
+A row is not the record: Elvis Aron Presley's SS-5 row (file 3433, record
+4118111) gives his birth year as 1934. He was born in 1935.
+
+**Citing.** The Getting Started Guide asks that a record retrieved from AAD
+be cited by its file, series and record group, with the retrieval date from
+AAD in brackets. `aad_get_record` builds that citation, using the date the
+cached copy was fetched.
+
+`tests/live_check.py` re-checks the client against AAD: the User-Agent is
+admitted, a fielded search and a record still parse.

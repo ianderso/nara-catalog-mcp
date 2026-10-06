@@ -3,7 +3,8 @@
 Not part of the test suite: every test runs mocked. Run this by hand when
 ``docs/API-NOTES.md`` has a question only the live Catalog can answer::
 
-    uv run python -m tests.live_check             # both questions, 2 calls
+    uv run python -m tests.live_check             # both questions, 2 calls,
+                                                  # and the AAD check below
     uv run python -m tests.live_check --classify  # also probe each unexposed
                                                   # search parameter alone,
                                                   # one call each
@@ -12,6 +13,10 @@ It reads ``NARA_API_KEY`` the way the server does (environment, then
 ``.env``), uses the server's own cache directory with ``refresh`` on every
 call so each answer is current and the month's ledger counts the spend, and
 prints what to record in API-NOTES.
+
+It then reads AAD, which needs no key and spends no Catalog calls: a search
+form, one fielded search and one record, about five requests two seconds
+apart, all with ``refresh`` so the pages are current.
 """
 
 from __future__ import annotations
@@ -26,6 +31,14 @@ from typing import Any
 
 import httpx
 
+from nara_catalog_mcp.aad import (
+    AadClient,
+    AadError,
+    AadLayoutError,
+    parse_record,
+    parse_results,
+    parse_search_form,
+)
 from nara_catalog_mcp.client import API_BASE, NaraApiError, NaraClient, unwrap
 from nara_catalog_mcp.config import ConfigError, load_config
 from nara_catalog_mcp.shape import record_extracted_text
@@ -36,6 +49,11 @@ SERVER_SOURCE = Path(__file__).resolve().parent.parent / "src" / "nara_catalog_m
 #: A digitised Revolutionary War pension file with partner OCR on every page:
 #: the specimen the fixtures were captured from.
 SPECIMEN = "54765873"
+
+#: An AAD passenger record: Irving Berlin, aged 5, as BEILIN, ISRAEL, in the
+#: file of passengers from the Russian Empire. AAD features it on its own
+#: home page, so it is the least likely row to be withdrawn.
+AAD_FILE, AAD_RECORD = "3259", "470718"
 
 
 def long_strings(node: Any, path: str = "$", *, minimum: int = 80) -> list[tuple[str, int]]:
@@ -175,6 +193,49 @@ async def check_include_extracted_text(client: NaraClient, save: Path | None) ->
         print("ok  shape.py reads it. Record the path above in API-NOTES as verified.")
 
 
+async def check_aad(aad: AadClient) -> bool:
+    """AAD: does it still admit the client, and do the parsers still read it?"""
+    print("\n== AAD: does it admit this client, and do its pages still parse?")
+    try:
+        form = await aad.read(
+            "fielded-search.jsp", {"dt": AAD_FILE, "tf": "F"}, parse_search_form, refresh=True
+        )
+        fields = {f["name"]: f for f in form["fields"]}
+        last, first = fields["LAST NAME"], fields["FIRST NAME"]
+        params = {
+            "dt": AAD_FILE,
+            "sc": form["columns"],
+            "q": "",
+            "tf": "F",
+            "cat": "all",
+            "bc": "sl,fd",
+            "rpp": 50,
+            "pg": 1,
+        }
+        for field, value in ((last, "BEILIN"), (first, "ISRAEL")):
+            column = field["column"]
+            params.update(
+                {f"op_{column}": "0", f"txt_{column}": value, f"nfo_{column}": field["nfo"]}
+            )
+        found = await aad.read("display-partial-records.jsp", params, parse_results, refresh=True)
+        record = await aad.read(
+            "record-detail.jsp", {"dt": AAD_FILE, "rid": AAD_RECORD}, parse_record, refresh=True
+        )
+    except (AadError, AadLayoutError, KeyError) as exc:
+        print(f"!!  {type(exc).__name__}: {exc}")
+        print("    AAD refused the client or changed its pages; see API-NOTES 'AAD'.")
+        return False
+    ids = [r["record_id"] for r in found["records"]]
+    values = {f["field"]: f["value"] for f in record["fields"]}
+    print(f"form: {len(form['fields'])} fields; search found {found['found']}: {ids}")
+    name = f"{values.get('FIRST NAME')} {values.get('LAST NAME')}"
+    manifest = values.get("MANIFEST IDENTIFICATION NUMBER")
+    print(f"record {AAD_RECORD}: {name}, age {values.get('AGE')}, manifest {manifest}")
+    ok = AAD_RECORD in ids and values.get("FIRST NAME") == "ISRAEL"
+    print("ok  AAD admits the client and the parsers read it." if ok else "!!  unexpected answer")
+    return ok
+
+
 def resolve_ref(spec: dict, ref: str) -> dict:
     """Follow a local JSON pointer such as ``#/components/parameters/q``.
 
@@ -296,15 +357,19 @@ async def main(argv: list[str] | None = None) -> int:
         print(exc, file=sys.stderr)
         return 2
 
+    aad = AadClient(cfg.cache_dir / "aad", timeout=cfg.timeout)
     async with (
         NaraClient(cfg.api_key, cfg.cache_dir, timeout=cfg.timeout) as client,
         httpx.AsyncClient(timeout=cfg.timeout) as http,
     ):
         await check_include_extracted_text(client, args.save)
         await audit_parameters(http, client, args.classify, args.save_spec)
+        aad_ok = await check_aad(aad)
         month, month_calls = client.month_ledger()
         print(f"\n{client.live_calls} live call(s) spent; {month_calls} recorded for {month}.")
-    return 0
+        print(f"{aad.live_calls} AAD request(s), which spend no Catalog calls.")
+    await aad.aclose()
+    return 0 if aad_ok else 1
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from nara_catalog_mcp import server
+from nara_catalog_mcp.aad import AadClient
 from nara_catalog_mcp.client import BUDGET_FILE, NaraClient
 from nara_catalog_mcp.config import Config
 
@@ -293,7 +294,30 @@ def served(tmp_path, monkeypatch) -> NaraClient:
     client = NaraClient("k", cache, timeout=5.0)
     monkeypatch.setattr(server.state, "client", client)
     monkeypatch.setattr(server.state, "config", Config(api_key="k", cache_dir=cache, timeout=5.0))
+    monkeypatch.setattr(server.state, "aad", aad_client(cache / "aad"))
     return client
+
+
+async def _no_sleep(seconds: float) -> None:
+    """Pacing is tested on its own; elsewhere a test should not wait for it."""
+
+
+def aad_client(cache_dir: Path, **kwargs) -> AadClient:
+    """An AAD client with a throwaway cache that never sleeps."""
+    return AadClient(cache_dir, timeout=5.0, sleep=_no_sleep, **kwargs)
+
+
+#: Pages captured from aad.archives.gov on 2026-10-05, scripts removed. The
+#: people in them are historical: Irving Berlin's family (as BEILIN) and other
+#: passengers of the 1890s, and Elvis Aron Presley's NUMIDENT row with an
+#: entrant born in 1882. Results pages were trimmed to those rows, and the
+#: PRESLEY page's count was cut from 9 to 3 to match.
+AAD_FIXTURES = Path(__file__).parent / "fixtures" / "aad"
+
+
+def aad_page(name: str) -> str:
+    """One captured AAD page, by file name without ``.html``."""
+    return (AAD_FIXTURES / f"{name}.html").read_text(encoding="utf-8")
 
 
 async def call_tool(tool_name: str, /, **arguments) -> dict:
@@ -333,6 +357,14 @@ LOCAL_VALIDATION_ERRORS = frozenset(
         "no_such_object",
         "conflicting_page",
         "not_digitised",
+        "invalid_file_id",
+        "invalid_record_id",
+        "invalid_series_id",
+        "not_in_category",
+        "unknown_field",
+        "coded_field",
+        "invalid_number",
+        "value_too_long",
     }
 )
 
@@ -362,6 +394,10 @@ def _value_for(name: str, spec: dict):
         return "54765873"
     if "object_id" in lowered:
         return "8811"
+    if lowered == "file_id":
+        return "3259"
+    if lowered == "record_id":
+        return "470718"
     if lowered.endswith(("_path", "path", "destination")):
         # A new file in a real, writable directory. A tool that writes a
         # file checks its parent exists and refuses to overwrite, so a
@@ -404,11 +440,16 @@ def _value_for(name: str, spec: dict):
     return "Hall"
 
 
+def _is_search_term(name: str) -> bool:
+    lowered = name.lower()
+    return lowered in {"title", "query"} or lowered.endswith("_text")
+
+
 def valid_args(tool, **overrides) -> dict:
     """Build arguments that carry a tool past its own input validation.
 
     Covers every required property from the schema, adds a search term for a
-    tool whose parameters are all optional but which needs at least one, then
+    search tool that would otherwise be called without one, then
     applies any :data:`ARGUMENT_HINTS` entry and the caller's overrides.
 
     Parameters
@@ -426,14 +467,13 @@ def valid_args(tool, **overrides) -> dict:
     schema = tool.input_schema or {}
     props = schema.get("properties") or {}
     args = {name: _value_for(name, props.get(name) or {}) for name in schema.get("required") or []}
-    # Search tools declare everything optional but refuse an empty call, so
-    # supply the first parameter that looks like a search term.
-    if not args:
-        for name in props:
-            lowered = name.lower()
-            if lowered in {"title", "query"} or lowered.endswith("_text"):
-                args[name] = _value_for(name, props[name])
-                break
+    # Search tools refuse an empty call, whether everything is optional or
+    # only the thing to search in is required (an AAD file), so supply the
+    # first parameter that looks like a search term when none is given yet.
+    if not any(_is_search_term(name) for name in args):
+        term = next((name for name in props if _is_search_term(name)), None)
+        if term is not None:
+            args[term] = _value_for(term, props[term])
     args.update(ARGUMENT_HINTS.get(tool.name, {}))
     args.update(overrides)
     return args

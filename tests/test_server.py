@@ -47,6 +47,9 @@ async def test_every_tool_is_registered():
         "api_budget",
         "download_page_image",
         "search_by_contribution_text",
+        "aad_list_series",
+        "aad_search",
+        "aad_get_record",
     }
 
 
@@ -795,7 +798,9 @@ async def test_every_single_record_reader_can_refresh():
     with_flag = {
         t.name for t in tools if "refresh" in ((t.input_schema or {}).get("properties") or {})
     }
-    assert with_flag == {name for name, _ in REFRESHABLE}
+    # aad_get_record reads one AAD row, which a reload can change; its own
+    # tests cover the flag.
+    assert with_flag == {name for name, _ in REFRESHABLE} | {"aad_get_record"}
 
 
 @respx.mock

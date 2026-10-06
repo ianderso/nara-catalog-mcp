@@ -26,14 +26,14 @@ SNAPSHOT = Path(__file__).parent / "fixtures" / "tool_schema.json"
 README = Path(__file__).parent.parent / "README.md"
 
 #: Ceiling on the combined tool descriptions, which are sent to the model on
-#: every session before any work happens. The surface is 18 tools averaging
-#: ~460 characters; raise this deliberately, not by accident. Raised from
+#: every session before any work happens. The surface is 21 tools averaging
+#: ~430 characters; raise this deliberately, not by accident. Raised from
 #: 8,500 for three AAD tools (about 1,460 characters, carrying what an AAD
 #: row is not) and the series-creator note on search_records (about 250).
 #:
 #: Measured on Python 3.11 and 3.12, which CI runs. From 3.13 the compiler
 #: strips docstring indentation, so the same descriptions count about 6%
-#: less there: 7,748 against 8,240 for the 18 tools on main.
+#: less there.
 DESCRIPTION_BUDGET = 10_000
 
 #: Tools that return somebody else's reading of a document -- machine OCR or a
@@ -47,6 +47,10 @@ SECOND_HAND_READING_TOOLS = (
     "search_transcriptions",
     "search_tags",
 )
+
+#: Tools that return rows of NARA's Access to Archival Databases: a clerk's
+#: transcription or index entry, typed from a record, never the record itself.
+AAD_ROW_TOOLS = ("aad_search", "aad_get_record")
 
 
 async def _tools() -> list:
@@ -124,7 +128,7 @@ async def test_the_readme_does_not_document_a_tool_that_was_removed():
     stale = sorted(
         n
         for n in _documented_in_readme() - names
-        if n.startswith(("search_", "get_", "browse_", "list_", "api_"))
+        if n.startswith(("search_", "get_", "browse_", "list_", "api_", "aad_"))
     )
     assert stale == [], f"README documents tools that do not exist: {stale}"
 
@@ -162,6 +166,20 @@ async def test_second_hand_readings_are_described_as_leads(tool_name):
     assert "image" in description, f"{tool_name} does not point back at the image"
 
 
+@pytest.mark.parametrize("tool_name", AAD_ROW_TOOLS)
+async def test_aad_rows_are_described_as_transcriptions(tool_name):
+    """An AAD row reads like the record, and is not: the description must say so.
+
+    The NUMIDENT row is a clerk's keying of an SS-5, the enlistment row a
+    keying of a punch card. The model decides what to cite from the
+    description, so that is where the difference has to be.
+    """
+    tool = next(t for t in await _tools() if t.name == tool_name)
+    description = (tool.description or "").lower()
+    assert "transcription" in description, f"{tool_name} does not call its rows transcriptions"
+    assert "not the record" in description, f"{tool_name} does not say a row is not the record"
+
+
 async def test_no_tool_offers_to_write_to_the_catalog():
     """The Catalog's POST and PUT routes are out of scope, by decision.
 
@@ -188,14 +206,16 @@ async def test_no_tool_raises_when_the_api_fails(served):
     respx.route(host="catalog.archives.gov").mock(
         return_value=httpx.Response(500, json={"message": "boom"})
     )
+    respx.route(host="aad.archives.gov").mock(return_value=httpx.Response(500, text="boom"))
     for tool in await _tools():
         out = await call_tool(tool.name, **valid_args(tool))
 
         assert isinstance(out, dict), f"{tool.name} did not return an object"
         assert_reached_body(tool.name, out)
         if tool.name != "api_budget":
-            assert out.get("error") == "api_error", (
-                f"{tool.name} returned {out} instead of an api_error envelope"
+            expected = "aad_error" if tool.name.startswith("aad_") else "api_error"
+            assert out.get("error") == expected, (
+                f"{tool.name} returned {out} instead of an {expected} envelope"
             )
             assert out.get("status") == 500
 

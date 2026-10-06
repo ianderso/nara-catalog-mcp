@@ -8,6 +8,27 @@ adding one is a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- Three tools over NARA's **Access to Archival Databases** (AAD), which the
+  Catalog API cannot reach: the NUMIDENT (Social Security applications,
+  claims and deaths, 1936–2007), the WWII Army enlistment cards, the
+  1820–1912 ship passenger lists, and the other name-searchable series.
+  `aad_list_series` lists a category's series with their files,
+  `aad_search` searches one file by free text and by named fields, and
+  `aad_get_record` reads one row in full with every code's meaning and a
+  citation in NARA's recommended form, dated when the row was retrieved.
+  The tools need no key and spend no Catalog calls. Their client reads
+  only `aad.archives.gov`, one request at a time and two seconds apart,
+  and caches answers for seven days.
+- Every AAD answer says what a row is: an agency clerk's transcription or
+  index entry, not the record. It carries AAD's own notice for the file, and
+  a NUMIDENT answer adds what the NUMIDENT leaves out.
+
+### Changed
+
+- `NARA_API_KEY` is required only by the Catalog tools.
+
 ## [1.0.2] — 2026-09-28
 
 ### Fixed
