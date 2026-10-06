@@ -384,8 +384,12 @@ async def search_records(
     know before reading the images.
 
     Returns the total number of matches and a page of summaries, each with its
-    NAID, hierarchy, holding unit and image count. Use `search_records_advanced`
-    when you need dates, a record group, an M-number or digitised-only.
+    NAID, hierarchy (each level with its NAID), holding unit and image count.
+    A series, as a hit or in a hierarchy, also names its `creator`, the office
+    that made it: many series share a title, such as one "Homestead Final
+    Certificates" per land office, and the creator tells them apart.
+    Use `search_records_advanced` when you need dates, a record group, an
+    M-number or digitised-only.
     """
     try:
         if not title and not query:

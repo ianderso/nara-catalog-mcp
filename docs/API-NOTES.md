@@ -156,6 +156,43 @@ Of the 55, the tools send 40 after the 2026-09-28 audit. The other 15, and why:
 | `ingestTimeStart`, `ingestTimeEnd` | "Descriptions ingested since": a change feed, not a research question, and a 500 for a bad value. |
 | `sort` | Not a `/records/search` parameter. It appears only in `searchAfter`'s description as incompatible; `paramSortBy` belongs to the contribution database routes. |
 
+## Creators sit on the series, not on the record group or the file
+
+Many series share a title. A search on `title_is="Homestead Final
+Certificates"` with `levelOfDescription=series` finds **164** series (230 by
+words), one per land office, and the title alone cannot tell them apart. What
+does is the series' **creator**: an authority heading such as
+"Department of the Interior. General Land Office. Sidney (Nebraska) Land
+Office. 7/2/1887-2/28/1906". Observed live 2026-10-05:
+
+- A series record carries `creators[]`, each with `heading`, `creatorType`,
+  `authorityType`, `naId` and the office's establish and abolish dates. On a
+  page of 100 such series, all 100 named a creator and the 100 headings
+  were all different.
+- A file unit or item carries **no** `creators` of its own (NAID 63668992,
+  a digitised homestead file). Its series does, inside `ancestors[]`:
+  each ancestor carries `naId`, `title`, `levelOfDescription`, `distance`
+  and, for a series, the same `creators[]` list.
+- A record group carries none, either as a hit (NAID 378, RG 49) or as an
+  ancestor. On a page of 100 pension hits and 100 RG 49 land-entry file
+  units, every creator found was on a series ancestor.
+- `creatorType` is "Most Recent" or "Predecessor". A series that absorbed
+  an earlier office's records lists both, and **not always most recent
+  first**: 7820365 lists Omaha, West Point and Norfolk (predecessors)
+  before Neligh (most recent). One series, 6037952, lists only a
+  predecessor.
+- `sourceIncludes` selects nested paths: `ancestors.creators.heading`,
+  `ancestors.creators.creatorType`, `ancestors.naId`, `creators.heading` and
+  `creators.creatorType` all come back, and nothing else of the creator does.
+
+So `LEAN_FIELDS` asks for those five paths, and a summary carries `creator`
+(the most recent, else the first listed) and `predecessors` wherever the
+Catalog gives them: on a series hit, and on a series inside `hierarchy`.
+Each hierarchy level also carries its `naid`, which `browse_children` and
+`ancestor_naid` take. Measured on the pages above, the summary grows by
+120 to 180 characters a hit, most of it the heading. `tests/live_check.py`
+re-checks this (two calls).
+
 ## `includeOtherExtractedText` rides with `includeExtractedText`
 
 `include_extracted_text` sends both flags, so a hit carries NARA's OCR and

@@ -140,3 +140,10 @@ def test_probe_values_follow_the_schema():
     assert live_check.probe_value({"type": "boolean"}) is True
     assert live_check.probe_value({"schema": {"type": "integer"}}) == 1
     assert live_check.probe_value({"type": "string"}) == "test"
+
+
+def test_distinct_creators_counts_names_and_differences():
+    """Two same-titled series with two offices, and one naming none."""
+    summaries = [{"creator": "Sidney"}, {"creator": "Neligh"}, {"creator": "Sidney"}, {}]
+    assert live_check.distinct_creators(summaries) == (3, 2)
+    assert live_check.distinct_creators([]) == (0, 0)

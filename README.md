@@ -39,7 +39,7 @@ local disk; it never overwrites one.
 
 | Tool | Purpose |
 | --- | --- |
-| `search_records` | Search by title or full text. Returns totals plus compact summaries: NAID, hierarchy, holding unit, date coverage, image count. |
+| `search_records` | Search by title or full text. Returns totals plus compact summaries: NAID, hierarchy, holding unit, date coverage, image count. Each series names its creator, the office that made it, which tells apart the many series sharing a title. |
 | `search_records_advanced` | The same search with the filters that narrow a common name: date range, record group, collection, ancestor NAID, level of description, microfilm publication number, local identifier, any control number, Congress number, reference unit, creator, person or organisation, place, type of materials, recurring date, digitised-only, "has transcriptions/tags/comments", exact matching of identifiers, `search_after` cursor paging past 10,000 hits, and each hit's OCR text (NARA's and partners') folded in on request. |
 | `browse_children` | The immediate children of a node: record group to series to file unit to item. Walk down from a series you trust. |
 
@@ -309,9 +309,10 @@ uv run python -m tests.live_check   # needs a key: asks the Catalog what the moc
 ```
 
 The live check asks the Catalog what the mocks cannot: where the two text
-flags put their text, and which search parameters the server does not send.
-It also asks AAD whether it still admits the client and whether the parsers
-still read its pages.
+flags put their text, which search parameters the server does not send, and
+whether search summaries still name each series' creator. It also asks AAD
+whether it still admits the client and whether the parsers still read its
+pages.
 Run it after a change on either side; a difference shows up in its output.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the suite is organised and what

@@ -24,6 +24,13 @@ adding one is a minor release.
 - Every AAD answer says what a row is: an agency clerk's transcription or
   index entry, not the record. It carries AAD's own notice for the file, and
   a NUMIDENT answer adds what the NUMIDENT leaves out.
+- Search summaries tell apart series that share a title. A series, as a hit
+  or in a hit's `hierarchy`, now carries `creator`, the agency that made it,
+  and `predecessors` when it also holds an earlier office's records. 164
+  series are titled "Homestead Final Certificates", one per land office; before
+  this, telling them apart took a `get_record` per hit. Every hierarchy
+  level also carries its `naid`, ready for `browse_children` or
+  `ancestor_naid`. A summary grows by about 150 characters a hit.
 
 ### Changed
 

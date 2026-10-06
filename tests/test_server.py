@@ -89,6 +89,42 @@ async def test_search_returns_summaries(served, record):
 
 
 @respx.mock
+async def test_search_asks_for_the_fields_that_tell_series_apart(served, record):
+    """Without these in sourceIncludes the Catalog never sends the creator."""
+    route = respx.get(f"{API_BASE}/records/search").mock(return_value=_ok(search_payload(record)))
+    await call_tool("search_records", title="Homestead Final Certificates")
+    fields = set(route.calls.last.request.url.params["sourceIncludes"].split(","))
+    assert {
+        "creators.heading",
+        "creators.creatorType",
+        "ancestors.naId",
+        "ancestors.creators.heading",
+        "ancestors.creators.creatorType",
+    } <= fields
+
+
+@respx.mock
+async def test_same_titled_series_come_back_distinguishable(served, land_office_series):
+    """The D5 case: two "Homestead Final Certificates" hits, two land offices."""
+    respx.get(f"{API_BASE}/records/search").mock(
+        return_value=_ok(search_payload(*land_office_series))
+    )
+    out = await call_tool("search_records", title="Homestead Final Certificates")
+    offices = [r["creator"].split(". ")[2] for r in out["records"]]
+    assert offices == ["Sidney (Nebraska) Land Office", "Neligh (Nebraska) Land Office"]
+
+
+@respx.mock
+async def test_a_file_unit_hit_names_its_series_and_land_office(served, land_entry_file):
+    """The series NAID and office come back without a get_record per hit."""
+    respx.get(f"{API_BASE}/records/search").mock(return_value=_ok(search_payload(land_entry_file)))
+    out = await call_tool("search_records_advanced", title="Homestead", record_group_number="49")
+    series = out["records"][0]["hierarchy"][-1]
+    assert series["naid"] == 7820310
+    assert "Lincoln (Nebraska) Land Office" in series["creator"]
+
+
+@respx.mock
 async def test_search_limit_is_clamped(served, record):
     """An over-large limit is clamped rather than passed through."""
     route = respx.get(f"{API_BASE}/records/search").mock(return_value=_ok(search_payload(record)))
