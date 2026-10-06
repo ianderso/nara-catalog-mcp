@@ -53,3 +53,8 @@ def test_the_api_key_is_declared_required_and_secret():
     key = next(v for v in PACKAGE["environmentVariables"] if v["name"] == "NARA_API_KEY")
     assert key["isRequired"] is True
     assert key["isSecret"] is True
+
+
+def test_the_description_fits_the_registry_limit():
+    """The MCP Registry refuses a description over 100 characters, after PyPI has the release."""
+    assert len(SERVER_JSON["description"]) <= 100
