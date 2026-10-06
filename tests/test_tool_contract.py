@@ -32,7 +32,7 @@ README = Path(__file__).parent.parent / "README.md"
 #: row is not) and the series-creator note on search_records (about 250).
 #:
 #: Measured on Python 3.11 and 3.12, which CI runs. From 3.13 the compiler
-#: strips docstring indentation, so the same descriptions count about 7%
+#: strips docstring indentation, so the same descriptions count about 6%
 #: less there: 7,748 against 8,240 for the 18 tools on main.
 DESCRIPTION_BUDGET = 10_000
 
