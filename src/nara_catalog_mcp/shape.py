@@ -53,6 +53,53 @@ def digital_object_urls(record: dict) -> list[str]:
     return [image["url"] for image in digital_objects(record)]
 
 
+#: The ``creatorType`` NARA gives the agency that created a series last.
+MOST_RECENT = "Most Recent"
+
+
+def creators(node: dict) -> dict:
+    """Name the agency that created a series, and any it took over from.
+
+    Many series share a title -- 164 are called "Homestead Final
+    Certificates", one per land office -- and the creator heading is what
+    tells them apart: "Department of the Interior. General Land Office.
+    Sidney (Nebraska) Land Office. 7/2/1887-2/28/1906".
+
+    Parameters
+    ----------
+    node : dict
+        A Catalog record, or one entry of its ``ancestors``.
+
+    Returns
+    -------
+    dict
+        ``{"creator": heading}``, plus ``"predecessors"`` (a list of
+        headings, in the Catalog's order) when the series also holds an
+        earlier office's records. Empty when the node names no creator, which
+        is the usual case for a record group, a file unit and an item; the
+        empty dict keeps a summary from growing keys it has nothing to put in.
+
+    Notes
+    -----
+    Verified live 2026-10-05; see ``docs/API-NOTES.md``. ``creatorType`` is
+    "Most Recent" or "Predecessor", and the most recent creator is not always
+    listed first (series 7820365 lists three predecessors before it). When no
+    creator is marked most recent, the first listed stands as the creator.
+    """
+    named = [
+        (c.get("creatorType"), heading)
+        for c in node.get("creators") or []
+        if isinstance(c, dict) and (heading := _text(c.get("heading")))
+    ]
+    if not named:
+        return {}
+    first = next((i for i, (kind, _) in enumerate(named) if kind == MOST_RECENT), 0)
+    out: dict = {"creator": named[first][1]}
+    if earlier := [heading for i, (_, heading) in enumerate(named) if i != first]:
+        out["predecessors"] = earlier
+    return out
+
+
 def hierarchy(record: dict) -> list[dict]:
     """Summarise a record's ancestors, outermost first.
 
@@ -64,15 +111,21 @@ def hierarchy(record: dict) -> list[dict]:
     Returns
     -------
     list of dict
-        One ``{"level", "title"}`` per ancestor. The record group and series
-        are what make a citation locatable.
+        One ``{"level", "title", "naid"}`` per ancestor, with the series'
+        ``creator`` and any ``predecessors`` from :func:`creators`. The
+        record group and series are what make a citation locatable; the
+        creator tells apart series that share a title, and the NAID is what
+        ``browse_children`` and ``ancestor_naid`` take.
     """
     return [
         {
             "level": _text(a.get("levelOfDescription")),
             "title": _text(a.get("title")),
+            "naid": a.get("naId"),
+            **creators(a),
         }
         for a in record.get("ancestors") or []
+        if isinstance(a, dict)
     ]
 
 
@@ -97,7 +150,8 @@ def summarize(record: dict) -> dict:
     Returns
     -------
     dict
-        Identity, hierarchy, holding units, date coverage and image count.
+        Identity, the creating agency when the record names one (a series
+        does), hierarchy, holding units, date coverage and image count.
     """
     images = digital_object_urls(record)
     return {
@@ -105,6 +159,7 @@ def summarize(record: dict) -> dict:
         "title": _text(record.get("title")),
         "level": _text(record.get("levelOfDescription")),
         "record_type": _text(record.get("recordType")),
+        **creators(record),
         "hierarchy": hierarchy(record),
         "reference_units": reference_units(record),
         "coverage_start": _text(record.get("coverageStartDate")),

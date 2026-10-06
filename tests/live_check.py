@@ -3,7 +3,7 @@
 Not part of the test suite: every test runs mocked. Run this by hand when
 ``docs/API-NOTES.md`` has a question only the live Catalog can answer::
 
-    uv run python -m tests.live_check             # both questions, 2 calls,
+    uv run python -m tests.live_check             # all three questions, 4 calls,
                                                   # and the AAD check below
     uv run python -m tests.live_check --classify  # also probe each unexposed
                                                   # search parameter alone,
@@ -39,9 +39,9 @@ from nara_catalog_mcp.aad import (
     parse_results,
     parse_search_form,
 )
-from nara_catalog_mcp.client import API_BASE, NaraApiError, NaraClient, unwrap
+from nara_catalog_mcp.client import API_BASE, LEAN_FIELDS, NaraApiError, NaraClient, unwrap
 from nara_catalog_mcp.config import ConfigError, load_config
-from nara_catalog_mcp.shape import record_extracted_text
+from nara_catalog_mcp.shape import record_extracted_text, summarize
 
 SWAGGER = f"{API_BASE}/swagger.json"
 SERVER_SOURCE = Path(__file__).resolve().parent.parent / "src" / "nara_catalog_mcp" / "server.py"
@@ -54,6 +54,17 @@ SPECIMEN = "54765873"
 #: file of passengers from the Russian Empire. AAD features it on its own
 #: home page, so it is the least likely row to be withdrawn.
 AAD_FILE, AAD_RECORD = "3259", "470718"
+
+#: A digitised homestead file whose series, one of the 164 titled "Homestead
+#: Final Certificates", names its land office only as the series creator.
+LAND_ENTRY_FILE = "63668992"
+SAME_TITLED_SERIES = "Homestead Final Certificates"
+
+
+def distinct_creators(summaries: list[dict]) -> tuple[int, int]:
+    """How many summaries name a creator, and how many different ones they name."""
+    named = [s["creator"] for s in summaries if s.get("creator")]
+    return len(named), len(set(named))
 
 
 def long_strings(node: Any, path: str = "$", *, minimum: int = 80) -> list[tuple[str, int]]:
@@ -236,6 +247,42 @@ async def check_aad(aad: AadClient) -> bool:
     return ok
 
 
+async def check_series_creators(client: NaraClient) -> None:
+    """Q3: do the lean search fields carry what tells same-titled series apart?
+
+    The creator heading sits on the series, both as a hit and as an
+    ancestor of a file unit. Two searches with the server's own field list
+    check both places.
+    """
+    print("\n== Q3: do search summaries name each series' creator?")
+    payload = await client.search(
+        title_is=SAME_TITLED_SERIES,
+        levelOfDescription="series",
+        limit=100,
+        sourceIncludes=LEAN_FIELDS,
+        refresh=True,
+    )
+    total, records = unwrap(payload)
+    named, distinct = distinct_creators([summarize(r) for r in records])
+    print(
+        f"series titled {SAME_TITLED_SERIES!r}: {total}; on this page {len(records)}, "
+        f"{named} naming a creator, {distinct} different creators"
+    )
+    payload = await client.search(naId=LAND_ENTRY_FILE, sourceIncludes=LEAN_FIELDS, refresh=True)
+    _, records = unwrap(payload)
+    hierarchy = summarize(records[0])["hierarchy"] if records else []
+    series = [h for h in hierarchy if h["level"] == "series"]
+    for entry in series:
+        print(f"   NAID {LAND_ENTRY_FILE}'s series {entry['naid']}: {entry.get('creator')}")
+    if records and series and all(h.get("creator") and h.get("naid") for h in series) and named:
+        print("ok  hits and ancestors both carry the creator and the series NAID.")
+    else:
+        print(
+            "!!  a creator or series NAID is missing: check LEAN_FIELDS and "
+            "shape.creators against the raw payload, and update API-NOTES."
+        )
+
+
 def resolve_ref(spec: dict, ref: str) -> dict:
     """Follow a local JSON pointer such as ``#/components/parameters/q``.
 
@@ -364,6 +411,7 @@ async def main(argv: list[str] | None = None) -> int:
     ):
         await check_include_extracted_text(client, args.save)
         await audit_parameters(http, client, args.classify, args.save_spec)
+        await check_series_creators(client)
         aad_ok = await check_aad(aad)
         month, month_calls = client.month_ledger()
         print(f"\n{client.live_calls} live call(s) spent; {month_calls} recorded for {month}.")

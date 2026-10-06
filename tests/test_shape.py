@@ -6,6 +6,7 @@ from nara_catalog_mcp.shape import (
     availability_entry,
     catalog_url,
     contribution,
+    creators,
     detail,
     digital_object_urls,
     digital_objects,
@@ -58,6 +59,67 @@ def test_hierarchy_is_outermost_first(record):
     """Record group before series, which is how a citation is written."""
     levels = [h["level"] for h in hierarchy(record)]
     assert levels == ["recordGroup", "series"]
+
+
+def test_hierarchy_carries_each_level_naid(record, land_entry_file):
+    """The ancestor's NAID is what browse_children and ancestor_naid take."""
+    assert [h["naid"] for h in hierarchy(land_entry_file)] == [378, 7820310]
+    # An ancestor the Catalog gave no NAID reports None rather than a guess.
+    assert [h["naid"] for h in hierarchy(record)] == [None, None]
+
+
+def test_series_with_the_same_title_are_told_apart_by_creator(land_office_series):
+    """Many series share a title; the creating office is what separates them."""
+    sidney, neligh = (summarize(s) for s in land_office_series)
+    assert sidney["title"] == neligh["title"] == "Homestead Final Certificates"
+    assert "Sidney (Nebraska) Land Office" in sidney["creator"]
+    assert "Neligh (Nebraska) Land Office" in neligh["creator"]
+
+
+def test_the_most_recent_creator_leads_wherever_the_catalog_lists_it(land_office_series):
+    """Series 7820365 lists three predecessors before the office that holds it."""
+    out = creators(land_office_series[1])
+    assert "Neligh" in out["creator"]
+    assert [p.split(". ")[2] for p in out["predecessors"]] == [
+        "Omaha (Nebraska) Land Office",
+        "West Point (Nebraska) Land Office",
+        "Norfolk (Nebraska) Land Office",
+    ]
+
+
+def test_a_series_creator_reaches_the_file_unit_hierarchy(land_entry_file):
+    """A file unit names no creator itself; its series does, in the hierarchy."""
+    out = summarize(land_entry_file)
+    assert "creator" not in out
+    series = out["hierarchy"][1]
+    assert series["level"] == "series"
+    assert "Lincoln (Nebraska) Land Office" in series["creator"]
+    assert len(series["predecessors"]) == 1
+    assert "Nebraska City (Nebraska) Land Office" in series["predecessors"][0]
+
+
+def test_a_level_without_creators_grows_no_keys(land_entry_file):
+    """A record group carries no creator; the summary stays as small as before."""
+    record_group = hierarchy(land_entry_file)[0]
+    assert set(record_group) == {"level", "title", "naid"}
+
+
+def test_a_lone_predecessor_stands_as_the_creator():
+    """One live series (6037952) names only a predecessor; it is still the creator."""
+    out = creators({"creators": [{"creatorType": "Predecessor", "heading": "An Office"}]})
+    assert out == {"creator": "An Office"}
+
+
+def test_junk_creators_are_ignored():
+    """Nulls, blank headings and headless entries add nothing, and do not raise."""
+    junk = {
+        "creators": [None, {"heading": None}, {"heading": "  "}, {"creatorType": "Most Recent"}]
+    }
+    assert creators(junk) == {}
+    assert creators({"creators": None}) == {}
+    assert hierarchy({"ancestors": [None, {"title": "Series", "creators": None}]}) == [
+        {"level": None, "title": "Series", "naid": None}
+    ]
 
 
 def test_undigitised_record_has_no_images():

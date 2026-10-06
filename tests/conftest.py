@@ -152,6 +152,88 @@ def child_records() -> list[dict]:
     ]
 
 
+def _land_office(name: str, state: str, dates: str, kind: str = "Most Recent") -> dict:
+    """One creator entry as the Catalog gives it for a land-office series."""
+    return {
+        "creatorType": kind,
+        "heading": f"Department of the Interior. General Land Office. "
+        f"{name} ({state}) Land Office. {dates}",
+        "authorityType": "organization",
+    }
+
+
+@pytest.fixture
+def land_office_series() -> list[dict]:
+    """Two series hits with the same title, told apart only by their creator.
+
+    Shapes and headings captured from the live Catalog on 2026-10-05
+    (NAIDs 7820442 and 7820365, both "Homestead Final Certificates" in RG
+    49). The second lists three predecessor offices before the most recent
+    one, which is the order the Catalog really gives.
+    """
+    rg49 = {
+        "levelOfDescription": "recordGroup",
+        "title": "Records of the Bureau of Land Management",
+        "naId": 378,
+        "recordGroupNumber": 49,
+    }
+    return [
+        {
+            "naId": 7820442,
+            "title": "Homestead Final Certificates",
+            "levelOfDescription": "series",
+            "creators": [_land_office("Sidney", "Nebraska", "7/2/1887-2/28/1906")],
+            "ancestors": [rg49],
+        },
+        {
+            "naId": 7820365,
+            "title": "Homestead Final Certificates",
+            "levelOfDescription": "series",
+            "creators": [
+                _land_office("Omaha", "Nebraska", "12/28/1855-ca. 5/21/1869", "Predecessor"),
+                _land_office("West Point", "Nebraska", "6/1/1869-ca. 8/31/1873", "Predecessor"),
+                _land_office("Norfolk", "Nebraska", "9/1/1873-9/10/1881", "Predecessor"),
+                _land_office("Neligh", "Nebraska", "9/1/1881-ca. 2/15/1894"),
+            ],
+            "ancestors": [rg49],
+        },
+    ]
+
+
+@pytest.fixture
+def land_entry_file() -> dict:
+    """A digitised file unit whose series names its land office only as creator.
+
+    Shape captured from NAID 63668992 on 2026-10-05: the file unit carries
+    no creators of its own, and its series ancestor carries two. The
+    entrant's name in the title is replaced with an invented one.
+    """
+    return {
+        "naId": 63668992,
+        "title": "Lincoln Land Office (Nebraska), Homestead Final Certificate "
+        "No. 12018 - A. Settler, November 10, 1905",
+        "levelOfDescription": "fileUnit",
+        "ancestors": [
+            {
+                "distance": 2,
+                "levelOfDescription": "recordGroup",
+                "title": "Records of the Bureau of Land Management",
+                "naId": 378,
+            },
+            {
+                "distance": 1,
+                "levelOfDescription": "series",
+                "title": "Homestead Final Certificates",
+                "naId": 7820310,
+                "creators": [
+                    _land_office("Nebraska City", "Nebraska", "9/14/1857-8/27/1868", "Predecessor"),
+                    _land_office("Lincoln", "Nebraska", "9/3/1868-4/30/1925"),
+                ],
+            },
+        ],
+    }
+
+
 @pytest.fixture
 def transcription_items() -> list[dict]:
     """Two citizen transcriptions of the same file, with an edit history."""

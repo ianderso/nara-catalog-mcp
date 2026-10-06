@@ -33,10 +33,14 @@ logger = logging.getLogger("nara_catalog_mcp.client")
 API_BASE = "https://catalog.archives.gov/api/v2"
 
 #: Field set worth requesting for a search hit. The full record is large, and
-#: ``sourceIncludes`` is the documented way to trim it.
+#: ``sourceIncludes`` is the documented way to trim it. The creator fields are
+#: what tell apart series that share a title; nested paths such as
+#: ``ancestors.creators.heading`` select as expected (verified live 2026-10-05).
 LEAN_FIELDS = (
     "naId,title,levelOfDescription,recordType,"
-    "ancestors.title,ancestors.levelOfDescription,"
+    "creators.heading,creators.creatorType,"
+    "ancestors.naId,ancestors.title,ancestors.levelOfDescription,"
+    "ancestors.creators.heading,ancestors.creators.creatorType,"
     "digitalObjects.objectUrl,digitalObjects.objectType,"
     "physicalOccurrences.referenceUnits.name,"
     "scopeAndContentNote,coverageStartDate,coverageEndDate,onlineResources.url"

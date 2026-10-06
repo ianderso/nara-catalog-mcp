@@ -74,7 +74,7 @@ on how the live Catalog answers, record what was observed and when, in
 `docs/API-NOTES.md` and beside the code or fixture that relies on it. Remove
 personal names and anything else identifying from captured payloads before
 committing them. `uv run python -m tests.live_check`, with a key in `.env`,
-re-checks the claims the notes already make and spends two calls doing it.
+re-checks the claims the notes already make and spends four calls doing it.
 
 ## What will not be merged
 
