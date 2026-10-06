@@ -7,13 +7,13 @@
     "url": "https://github.com/ianderso/nara-catalog-mcp",
     "source": "github"
   },
-  "version": "1.0.2",
+  "version": "1.1.0",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "nara-catalog-mcp",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
