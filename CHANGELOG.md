@@ -8,6 +8,8 @@ adding one is a minor release.
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-10-05
+
 ### Added
 
 - Three tools over NARA's **Access to Archival Databases** (AAD), which the
@@ -105,7 +107,8 @@ The first public release.
   (403).
 - A `.env` file is read from the working directory only.
 
-[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ianderso/nara-catalog-mcp/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ianderso/nara-catalog-mcp/releases/tag/v1.0.0
