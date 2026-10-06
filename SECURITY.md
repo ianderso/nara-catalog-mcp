@@ -17,14 +17,19 @@ In scope: this server — how it handles the API key, the files it writes, the
 requests it makes, and anything a tool argument or an API response can make it
 do.
 
-Out of scope: the National Archives Catalog API and its media host, which this
-project does not operate. Report problems with those to NARA.
+Out of scope: the National Archives Catalog API, its media host and the Access
+to Archival Databases (`aad.archives.gov`), which this project does not
+operate. Report problems with those to NARA.
 
 ## The security model, briefly
 
 - **The API key** stays in the environment. It is sent only to
   `catalog.archives.gov`, as the `x-api-key` header; it is never sent to the
-  media host, and never written to the response cache.
+  media host or to AAD, and never written to the response cache.
+- **The AAD client reads one host.** A request hook refuses any host but
+  `aad.archives.gov`, and redirects are not followed, so a tool argument
+  cannot point it at another site. AAD file and record ids are validated as
+  digits before they are sent.
 - **The server writes to the Catalog never, and to local disk once.**
   `download_page_image` creates a new file at a path the model chooses, using
   exclusive creation, so it cannot overwrite or truncate an existing file. It

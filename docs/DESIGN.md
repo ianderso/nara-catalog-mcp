@@ -33,8 +33,9 @@ a local side effect is built so that a bad instruction cannot do harm
 
 ## The surface, and why each part is there
 
-Eighteen tools over the Catalog's 59 paths. The ones with research
-value are covered; the rest are out by decision (below).
+Eighteen tools over the Catalog's 59 paths, and three over AAD (below).
+The Catalog paths with research value are covered; the rest are out by
+decision (below).
 
 **The evidence path.** `get_extracted_text` (`/extractedText/{naId}`),
 `get_transcriptions`, `get_tags` and `get_comments` (`/{kind}/naId/{naId}`),
@@ -143,8 +144,64 @@ removes only a file this call created. The body is streamed rather than
 buffered, because a digital object is not always a page scan, and the format
 is named from the bytes rather than the URL, because an HTML error page with
 a 200 would otherwise pass for a download. Every tool carries MCP
-annotations: seventeen are marked read-only, and this one is marked as
+annotations: twenty are marked read-only, and this one is marked as
 writing but not destructive, so a client can ask before it runs.
+
+## AAD: a second NARA service, read with care
+
+The Access to Archival Databases holds the NUMIDENT (146.9 million entries),
+the WWII Army enlistment cards and the 1820-1912 passenger lists, none of
+which the Catalog API reaches: the NUMIDENT's series description in the
+Catalog has no digital objects and points back to AAD. AAD has no API, so
+three tools read its pages: `aad_list_series`, `aad_search` and
+`aad_get_record`. Why they look the way they do:
+
+**A client of its own.** `aad.py` does not share the Catalog client. It
+needs no key, counts against no quota, and must never be sent the
+Catalog's key, so the two cannot be confused. Its request hook refuses any
+host but `aad.archives.gov`. The tools run without `NARA_API_KEY`:
+`load_config(require_key=False)` gives them the cache directory and
+timeout.
+
+**Paced like a person.** One request in flight, two seconds between starts,
+a search's "Please Wait" page asked again within the same session, and at
+most five polls before `aad_busy`. AAD publishes no rate limit and no
+robots.txt, and its terms forbid nothing here (API-NOTES has what was read),
+so the pace is a courtesy rather than a rule anyone set.
+
+**Parsed answers cached for a week, not for ever.** The cache holds what the
+parser returned, with the date it was fetched; that date is the retrieval
+date NARA's citation form asks for. A week, because NARA reloads AAD files
+and a reload can renumber rows: the NUMIDENT pages carry a notice that
+bookmarks from before 30 September 2026 may no longer work. A page that
+fails to parse is never cached.
+
+**A page it cannot read is an error, not an empty answer.** Each parser
+looks for its landmarks (the "You found N" count, the field table, the
+file-and-series header) and raises `AadLayoutError` without them, which the
+tools return as `aad_layout_changed`. A redesign of AAD therefore reads as
+"cannot read", never as "nobody by that name".
+
+**Fields by name, codes refused.** `aad_search` reads each file's fielded
+search form once, maps the caller's field names to AAD's column ids, and
+sends text fields as "all of the values" and number fields as equals or
+between. A coded field, such as a state, is searched by a code the caller
+cannot know, so it is refused with the way round it: the free-text `query`
+matches code meanings.
+
+**A row is a transcription, said where the model reads it.** Like OCR and
+citizen transcriptions, an AAD row is someone's keying of a document. The
+descriptions of `aad_search` and `aad_get_record` say so, and a contract
+test holds them to it. Each answer also carries AAD's own notice for the
+file and, for the NUMIDENT, what the file leaves out, from NARA's series
+FAQ: these cost nothing until the NUMIDENT is actually searched, which is
+why they are in the answer rather than the description.
+
+**An identifying User-Agent.** AAD's load balancer refused the client's
+plain name with a 403 and admitted the `Mozilla/5.0 (compatible; <name>;
++<url>)` form that Googlebot and Bingbot send. The client sends that form
+with its own name and repository. It does not imitate a browser, and AAD can
+still tell it apart and refuse it by name.
 
 ## Configuration
 

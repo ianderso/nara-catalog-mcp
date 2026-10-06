@@ -1,4 +1,19 @@
 {
+  "aad_get_record": [
+    "file_id",
+    "record_id",
+    "refresh"
+  ],
+  "aad_list_series": [
+    "category",
+    "series_id"
+  ],
+  "aad_search": [
+    "fields",
+    "file_id",
+    "page",
+    "query"
+  ],
   "api_budget": [],
   "browse_children": [
     "limit",

@@ -8,7 +8,10 @@
 An [MCP](https://modelcontextprotocol.io) server for genealogical research in
 the **US National Archives Catalog**. Find an ancestor's pension file, service
 record or census page, read what machines and volunteers have transcribed
-from it, and fetch the page images you will cite.
+from it, and fetch the page images you will cite. It also searches NARA's
+**Access to Archival Databases** (AAD), which the Catalog cannot reach: the
+NUMIDENT's Social Security applications and deaths, the WWII Army enlistment
+cards, and the 1820–1912 ship passenger lists among them.
 
 It works the way a careful genealogist does. A catalogue description is a
 finding aid, and OCR text, transcriptions and tags are somebody else's
@@ -28,7 +31,7 @@ supported by the National Archives and Records Administration.
 
 ## Tools
 
-The server publishes 18 tools. Seventeen only read, and are annotated
+The server publishes 21 tools. Twenty only read, and are annotated
 read-only for the client. One, `download_page_image`, writes a new file to
 local disk; it never overwrites one.
 
@@ -71,6 +74,19 @@ you which page to open. It does not tell you what the page says.
 | `search_tags` | Find records carrying a tag, exactly or by word. |
 | `search_extracted_text` | Find records whose partner-contributed extracted text matches. |
 | `search_comments` | Find records other researchers have commented on. |
+
+**NARA's Access to Archival Databases (AAD)**
+
+AAD serves a selection of NARA's electronic records as searchable tables.
+Each row is a database entry an agency clerk typed from a record: a
+transcription or index entry, not the record, and cited as an electronic
+record. These tools need no key and spend none of the Catalog allowance.
+
+| Tool | Purpose |
+| --- | --- |
+| `aad_list_series` | The series in an AAD category (genealogy by default), each with its files and their ids. A search runs on one file. |
+| `aad_search` | Search one file by free text over the whole row and by named fields; 50 rows a page, each with its record id. |
+| `aad_get_record` | One row in full, every coded value with its meaning, and a citation in NARA's recommended form with the date retrieved. |
 
 **Housekeeping**
 
@@ -163,7 +179,7 @@ parents, and not the directory the package is installed in.
 
 | Variable | Meaning |
 | --- | --- |
-| `NARA_API_KEY` | Your Catalog API key. Required. |
+| `NARA_API_KEY` | Your Catalog API key. Required by the Catalog tools; the AAD tools need none. |
 | `NARA_CACHE_DIR` | Response cache directory. Default `~/.cache/nara-catalog-mcp`. |
 | `NARA_TIMEOUT` | HTTP timeout in seconds. Default 60. |
 | `NARA_MONTHLY_CALL_BUDGET` | Calls per month the key allows, reported by `api_budget`. Default 10000. |
@@ -208,6 +224,33 @@ Results come back as summaries rather than whole records. A raw Catalog record
 is large and mostly irrelevant to the decision you are making, which is whether
 this record is worth opening.
 
+## Searching AAD
+
+AAD has no API, so `aad_*` read its web pages the way a browser does, and
+parse them. That shapes how they behave:
+
+- **One file at a time.** A big series is split into files, and a search
+  runs on one. The NUMIDENT is split by entry type (application, claim,
+  death) and by surname range, so `aad_list_series` comes first.
+- **Fields by name.** `fields={"LAST NAME": "PRESLEY", "DATE OF BIRTH (YEAR)":
+  "1930-1935"}`. A field AAD stores as a code, such as a state or a
+  country, cannot be searched by name: put its meaning in `query`, which
+  matches the whole row, code meanings included.
+- **Slow on purpose.** One request at a time, at least two seconds apart,
+  and a search usually takes two requests because AAD answers first with
+  a "Please Wait" page. Answers are cached for seven days, under
+  `NARA_CACHE_DIR/aad`; `refresh=true` on `aad_get_record` fetches a row
+  again.
+- **Record ids are not stable.** NARA reloads files, and a reload can
+  renumber the rows. Search again rather than reuse an old id, and cite a
+  row by its fields, its file and its series.
+- **A row is not the record.** It was keyed from an SS-5, a punch card or a
+  manifest, with the keying errors that brings, and no file holds everyone.
+  The NUMIDENT has entries only for people with a verified death or born
+  before 1908, and its death file omits state-reported deaths. Each answer
+  carries AAD's own notice for the file, and a NUMIDENT answer says what
+  that file leaves out.
+
 ## Notes
 
 - **A description is not evidence.** It summarises a file; it says nothing
@@ -235,7 +278,14 @@ is configured, and nothing here can take it back.
 
 - **The key** is read from the environment, sent only to
   `catalog.archives.gov` as the `x-api-key` header, and never sent to the
-  media host. It is not written to the response cache.
+  media host or to AAD. It is not written to the response cache.
+- **The AAD client reads one host.** A request hook refuses any host but
+  `aad.archives.gov`, so nothing a model passes in can make it fetch another
+  site. It identifies itself as `Mozilla/5.0 (compatible;
+  nara-catalog-mcp/<version>; +<this repository>)`, the form crawlers such
+  as Googlebot use. AAD's load balancer answered 403 to the plain
+  `nara-catalog-mcp/<version>` form when it was tried; see
+  [docs/API-NOTES.md](docs/API-NOTES.md).
 - **Contributions are untrusted text.** Tags, comments and transcriptions are
   written by members of the public and reach the model verbatim, so one could
   contain instructions aimed at it. The server's instructions tell the model to
@@ -260,6 +310,8 @@ uv run python -m tests.live_check   # needs a key: asks the Catalog what the moc
 
 The live check asks the Catalog what the mocks cannot: where the two text
 flags put their text, and which search parameters the server does not send.
+It also asks AAD whether it still admits the client and whether the parsers
+still read its pages.
 Run it after a change on either side; a difference shows up in its output.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the suite is organised and what
