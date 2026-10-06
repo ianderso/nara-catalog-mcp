@@ -27,8 +27,14 @@ README = Path(__file__).parent.parent / "README.md"
 
 #: Ceiling on the combined tool descriptions, which are sent to the model on
 #: every session before any work happens. The surface is 18 tools averaging
-#: ~450 characters; raise this deliberately, not by accident.
-DESCRIPTION_BUDGET = 8_500
+#: ~460 characters; raise this deliberately, not by accident. Raised from
+#: 8,500 for three AAD tools (about 1,460 characters, carrying what an AAD
+#: row is not) and the series-creator note on search_records (about 250).
+#:
+#: Measured on Python 3.11 and 3.12, which CI runs. From 3.13 the compiler
+#: strips docstring indentation, so the same descriptions count about 6%
+#: less there: 7,748 against 8,240 for the 18 tools on main.
+DESCRIPTION_BUDGET = 10_000
 
 #: Tools that return somebody else's reading of a document -- machine OCR or a
 #: volunteer's typing. Each must tell the model, in the description it acts on,
